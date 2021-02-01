@@ -521,3 +521,518 @@ export default {
 ```
 
 ## 十六、渲染侧栏菜单
+
+一开始侧栏的做法是固定写死的，后续会改成根据登录状态、账号信息等动态添加侧栏item，那样才是正确的。代码如下：
+
+```html
+<template>
+  <div>
+    <!--遍历菜单内容：一种是有子内容的，另一种是没有的-->
+    <el-menu default-active="1-1" unique-opened='true' class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose">
+        <el-submenu index="1">
+        <template slot="title">
+          <i class="el-icon-location"></i>
+          <span>用户</span>
+        </template>
+        <el-menu-item index="1-1">
+          <i class="el-icon-star-on"></i>
+          <span slot="title">子选项1</span>
+        </el-menu-item>
+        <el-menu-item index="1-2">
+          <i class="el-icon-star-off"></i>
+          <span slot="title">子选项2</span>
+        </el-menu-item>
+        <el-menu-item index="1-3">
+          <i class="el-icon--left"></i>
+          <span slot="title">子选项3</span>
+        </el-menu-item>
+      </el-submenu>
+
+      <el-submenu index="2">
+        <template slot="title">
+          <i class="el-icon-location"></i>
+          <span>运营</span>
+        </template>
+        <el-menu-item index="2-1">
+          <i class="el-icon-star-on"></i>
+          <span slot="title">子选项1</span>
+        </el-menu-item>
+        <el-menu-item index="2-2">
+          <i class="el-icon-star-off"></i>
+          <span slot="title">子选项2</span>
+        </el-menu-item>
+        <el-menu-item index="2-3">
+          <i class="el-icon--left"></i>
+          <span slot="title">子选项3</span>
+        </el-menu-item>
+      </el-submenu>
+
+      <el-submenu index="3">
+        <template slot="title">
+          <i class="el-icon-location"></i>
+          <span>设置</span>
+        </template>
+        <el-menu-item index="3-1">
+          <i class="el-icon-star-on"></i>
+          <span slot="title">子选项1</span>
+        </el-menu-item>
+        <el-menu-item index="3-2">
+          <i class="el-icon-star-off"></i>
+          <span slot="title">子选项2</span>
+        </el-menu-item>
+        <el-menu-item index="3-3">
+          <i class="el-icon--left"></i>
+          <span slot="title">子选项3</span>
+        </el-menu-item>
+      </el-submenu>
+
+      <el-menu-item index="4">
+        <i class="el-icon-menu"></i>
+        <span slot="title">导航二</span>
+      </el-menu-item>
+    </el-menu>
+  </div>
+</template>
+```
+
+然后接着是根据menuList中的值来进行动态渲染所得到的（注意v-for），最终left-menu代码如下：
+
+```html
+<template>
+  <div>
+    <!--遍历菜单内容：一种是有子内容的，另一种是没有的-->
+    <el-menu default-active="1-1" unique-opened='true' class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose">
+      <template v-for="(item,index) in menuList">
+        <el-menu-item :index="index" v-if="!item.children" :key="index">
+          <i :class="item.icon"></i>
+          <span slot="title">{{item.name}}</span>
+        </el-menu-item>
+
+        <el-submenu v-else :index="index" :key="index">
+          <template slot="title">
+            <i :class="item.icon"></i>
+            <span>{{item.name}}</span>
+          </template>
+          <el-menu-item v-for="(subItem,subIndex) in item.children" :index="index+'-'+subIndex" :key="subIndex">
+            <i :class="subItem.icon"></i>
+            <span slot="title">{{subItem.name}}</span>
+          </el-menu-item>
+        </el-submenu>
+      </template>
+    </el-menu>
+  </div>
+</template>
+```
+
+## 十七、菜单的切换与显示隐藏的控制
+
+给那些需要添加v-for的元素加上 router-link 标签，并且添加上 to 属性来表示指向哪个页面：
+
+```html
+<template>
+  <div>
+    <!--这种做法是固定写死的，后续会改成根据登录状态、账号信息等动态添加侧栏item，那样才是正确的-->
+
+    <!--遍历菜单内容：一种是有子内容的，另一种是没有的-->
+    <el-menu default-active="0" class="el-menu-vertical" unique-opened='true' @open="handleOpen" @close="handleClose">
+      <template v-for="(item,index) in menuList">
+          <!-- 注意这里！-->
+        <router-link :to='item.path' v-if="!item.children && !item.hidden" :key="index">
+          <el-menu-item :index="index">
+            <i :class="item.icon"></i>
+            <span slot="title">{{item.name}}</span>
+          </el-menu-item>
+        </router-link>
+
+        <el-submenu v-if='item.children && !item.hidden' :index="index" :key="index">
+          <template slot="title">
+            <i :class="item.icon"></i>
+            <span>{{item.name}}</span>
+          </template>
+          <router-link :to='item.path+"/"+subItem.path' v-for="(subItem,subIndex) in item.children" :key="subIndex">
+            <el-menu-item :index="index+'-'+subIndex" v-if='!subItem.hidden'>
+              <i :class="subItem.icon"></i>
+              <span slot="title">{{subItem.name}}</span>
+            </el-menu-item>
+          </router-link>
+        </el-submenu>
+      </template>
+    </el-menu>
+  </div>
+</template>
+```
+
+注意如何判断要不要在html中的元素加 : 呢？看你是不是要绑定数据（v-bind），如果你需要用到数据动态改变，那很明显要绑定。（或者这么理解：只要不是静态写死的，你都得绑定）
+
+同样见上面代码的 hidden 属性。
+
+## 十八、管理中心顶部UI
+
+很明显每个模块都独立出来，所以把 base-view.vue 中的 < el-header> 抽取出来，命名为 top-header.vue：
+
+```vue
+<template>
+    <div>
+      蔡芳汉的博客
+    </div>
+</template>
+
+<script>
+
+</script>
+
+<style>
+
+</style>
+```
+
+然后就是在 main.js 里去注册为组件：
+
+```javascript
+import topHeader from './layout/top-header'
+
+Vue.component("topHeader", topHeader);
+```
+
+然后在 base-view.vue 里使用：
+
+```html
+<el-header id="admin-header">
+     <top-header></top-header>
+</el-header>
+```
+
+查看页面颜色使用Elements查看（Console旁边的那个）
+
+注意使用class来操控对应的标签。
+
+### 注意，到这里当前的代码可以作为一个通用模板！也就是导航菜单的模板~
+
+## 十九、登录界面的UI
+
+输入 http://localhost:8080/#/login ，可以发现登录是和 http://localhost:8080/#/content/manage-image 同级的一个页面。（注意看Url）
+
+这一节主要是去制作登录界面，去调整UI，理解div和css配合搭建页面的情况。
+
+Form代表表单，同样也是采用 element-UI 来实现：https://element.eleme.cn/#/zh-CN/component/form
+
+http://192.168.220.141:2020/swagger-ui.html
+
+![](C:\Users\Fin\WebProjects\FrontEndNotes\img\用户接口.PNG)
+
+login.vue 代码如下：
+
+```vue
+<template>
+    <div class="login-box">
+        <!--首页页面-->
+        <div class="login-header">
+            <div class="header-center center">
+                <div class="login-logo">
+                    吐司单词 | 登录
+                </div>
+            </div>
+        </div>
+        <div class="login-content">
+            <div class="content-center center">
+                <el-row :gutter='20'>
+                    <el-col :span='8'>
+                        <el-form :label-position="left" label-width="100px">
+                            <el-form-item label="帐号" required>
+                                <el-input v-model="user.account"></el-input>
+                            </el-form-item>
+                            <el-form-item label="密码" required>
+                                <el-input v-model="user.password" placeholder="xxx"></el-input>
+                            </el-form-item>
+                            <el-form-item label="验证码" required>
+                                <el-input v-model="loginInfo.verifyCode"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="login" size='small'>登 录</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </el-col>
+                </el-row>
+            </div>
+        </div>
+        <div class="login-bottom">
+
+        </div>
+    </div>
+</template>
+
+<script>
+    export default {
+        data() {
+            return {
+                user: {
+                    account: '',
+                    password: ''
+                },
+                loginInfo: {
+                    verifyCode: ''
+                }
+            }
+        },
+        method: {
+            login() {
+
+            }
+        }
+    }
+
+</script>
+
+<style>
+    .center {
+        margin: 0 auto;
+        width: 1140px;
+    }
+
+    .login-header {
+        background-color: dodgerblue;
+        height: 46px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .header-center {
+        line-height: 46px;
+    }
+
+    .login-logo {
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .content-center {
+        width: 1146px;
+        height: 300px;
+        background: white;
+        box-shadow: 0 1px 10px #afafaf;
+        border-radius: 6px;
+        padding-top: 20px;
+        padding-left: 20px;
+    }
+
+    /* 使用label也是可以覆盖到的，这个label是查看网页获取到的，因为是饿了么的组件 */
+    .el-form-item__label {
+        background: #FBFBFB;
+        text-align: center;
+        border: solid #E6E6E6 1px;
+        border-radius: 6px;
+    }
+
+    .el-input__inner {
+        height: 42px;
+        margin-left: 2px;
+    }
+</style>
+```
+
+## 二十、登录UI的验证码
+
+反正就加 class 来获取到对应标签，然后给它添加样式。
+
+代码如下：
+
+```vue
+<template>
+    <div class="login-box">
+        <!--首页页面-->
+        <div class="login-header">
+            <div class="header-center center">
+                <div class="login-logo">
+                    吐司单词 | 登录
+                </div>
+            </div>
+        </div>
+        <div class="login-content">
+            <div class="content-center center">
+                <el-row :gutter='20'>
+                    <el-col :span='8'>
+                        <el-form :label-position="left" label-width="100px">
+                            <el-form-item label="帐号" required>
+                                <el-input v-model="user.account"></el-input>
+                            </el-form-item>
+                            <el-form-item label="密码" required>
+                                <el-input v-model="user.password" placeholder="xxx"></el-input>
+                            </el-form-item>
+                            <el-form-item label="验证码" required>
+                                <el-input v-model="loginInfo.verifyCode"></el-input>
+                                <img :src="imgPath" @click="updateVerifyCode">
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="login" size='small'>登 录</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </el-col>
+                </el-row>
+            </div>
+        </div>
+        <div class="login-bottom">
+
+        </div>
+    </div>
+</template>
+
+<script>
+    export default {
+        data() {
+            return {
+                user: {
+                    account: '',
+                    password: ''
+                },
+                loginInfo: {
+                    verifyCode: '',
+                    from: '',
+                    to: ''
+                },
+                imgPath: '',
+                key:''
+            }
+        },
+        method: {
+            login() {
+
+            },
+            updateVerifyCode() {
+                this.imgPath = 'http://192.168.220.141:2020//user/captcha?captcha_key=' + this.key;
+                console.log(this.imgPath)
+            }
+        },
+        // 在mounted的时候就要去初始化验证码图片路径
+        mounted() {
+            // 注意这里，建信的项目也是这样写前端的
+            this.key = Date.parse(new Date())
+            this.updateVerifyCode
+        }
+    }
+
+</script>
+
+<style>
+    .center {
+        margin: 0 auto;
+        width: 1140px;
+    }
+
+    .login-header {
+        background-color: dodgerblue;
+        height: 46px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .header-center {
+        line-height: 46px;
+    }
+
+    .login-logo {
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .content-center {
+        width: 1146px;
+        height: 300px;
+        background: white;
+        box-shadow: 0 1px 10px #afafaf;
+        border-radius: 6px;
+        padding-top: 20px;
+        padding-left: 20px;
+    }
+
+    /* 使用label也是可以覆盖到的，这个label是查看网页获取到的，因为是饿了么的组件 */
+    .el-form-item__label {
+        background: #FBFBFB;
+        text-align: center;
+        border: solid #E6E6E6 1px;
+        border-radius: 6px;
+    }
+
+    .el-input__inner {
+        height: 42px;
+        margin-left: 2px;
+    }
+</style>
+```
+
+我对这个去拿后台的url的形式有点陌生，这个地址需要认真学习。
+
+## 二十一、axios进行网络数据请求
+
+如何提交数据呢？使用axios：https://cn.vuejs.org/v2/cookbook/using-axios-to-consume-apis.html
+
+在使用npm install时，--save：将保存配置信息到pacjage.json。默认为dependencies节点中。
+
+```javascript
+const axios = require('axios')s
+
+axios
+    .get("'https://api.coindesk.com/v1/bpi/currentprice.json'")
+    .then(response => {
+        console.log(response)
+        this.dream = response.data.bpi
+})
+```
+
+除此之外，还可以参考：https://www.sunofbeach.net/a/1201366916766224384 拿这个来做练手，看看怎么拿到数据。
+
+## 二十二、发起登录请求
+
+注意哥跟后端的接口一致！
+
+也是用axios。
+
+## 二十三、解决访问跨域问题
+
+配置文件：https://cli.vuejs.org/config/
+
+在README.md同级下面创建vue.config.js文件，复制以下代码到文件里：
+
+```javascript
+module.exports = {
+  devServer: {
+    proxy: {
+      '^/api': {
+        target: '<url>',
+        ws: true,
+        changeOrigin: true
+      },
+      '^/foo': {
+        target: '<other_url>'
+      }
+    }
+  }
+}
+```
+
+更改以上模板，如下：
+
+```javascript
+module.exports = {
+    devServer: {
+        proxy: {
+            '/user': { //修改1
+                target: 'http://192.168.220.141:2020/', //修改2
+                //ws: true, 
+                changeOrigin: true
+            },
+            // '^/foo': {
+            //     target: '<other_url>'
+            // }
+        }
+    }
+}
+```
+
+然后在login.vue里把相关的url都删掉，只保留最后的拼接符。
+
+登录成功后查看 console 里的application→cookies，可以找到本地的。
+
+## 二十四、
+
