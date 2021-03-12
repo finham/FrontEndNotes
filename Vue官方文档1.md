@@ -893,6 +893,8 @@ Error! Could not reach the API. Error: Network Error
 
 除了 `watch` 选项之外，您还可以使用命令式的 [vm.$watch API](https://cn.vuejs.org/v2/api/#vm-watch)。
 
+
+
 ## 6、Class与Style绑定
 
 操作元素的 class 列表和内联样式是数据绑定的一个常见需求。
